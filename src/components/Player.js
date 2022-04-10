@@ -6,7 +6,7 @@ import YouTube from "react-youtube";
 import SongsList from "./SongsList";
 import SocketIo from 'socket.io-client'
 
-const Player = (props) => {
+const Player = ({ songs, currentSong, setCurrentSong }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showQueue, setShowQueue] = useState(false);
   const [queue, setQueue] = useState([]);
@@ -24,9 +24,9 @@ const Player = (props) => {
   const onYoutubeStateChange = (state) => {
     if (state.data === 0) {
       const ENDPOINT = process.env.REACT_APP_GW_MUSIC_PROVIDER_SOCKET
-      const socket = SocketIo(ENDPOINT)
+      const SOCKET = SocketIo(ENDPOINT)
   
-      socket.emit('end-music', props.songs[0].id)
+      SOCKET.emit('end-music', currentSong.id)
 
       SkipSong(true)
     }
@@ -44,45 +44,40 @@ const Player = (props) => {
         youtubePlayer.pauseVideo()
       }
     }
-  });
+  }, [currentSong, isPlaying]);
 
   useEffect(() => {
-    const currentIndex = props.songs.findIndex((song) => song.id === )
-    const temp = props.songs.filter((song, index) => index !== 0)
+    const currentIndex = songs.findIndex((song) => song.id === currentSong?.id)
+    const temp = songs.filter((song, index) => index > currentIndex)
     setQueue(temp)
-  }, [props.songs]);
+  }, [songs, currentSong]);
 
   const SkipSong = (forwards = true) => {
-    if (forwards) {
-      props.setCurrentSongIndex(() => {
-        let temp = props.currentSongIndex;
-        if (temp < props.songs.length - 1) {
-          temp++;
-        }
-
-        return temp;
-      });
-    } else {
-      props.setCurrentSongIndex(() => {
-        let temp = props.currentSongIndex;
-        if (temp > 0) {
-          temp--;
-        }
-
-        return temp;
-      });
+    const currentIndex = songs.findIndex((song) => song.id === currentSong.id)
+    if (forwards && currentIndex < songs.length - 1) {
+      setCurrentSong(songs[currentIndex + 1]);
+    } 
+    
+    if (!forwards && currentIndex > 0) {
+      setCurrentSong(songs[currentIndex - 1]);
     }
   };
 
   return (
     <>
       <div className="music-player">
-        <YouTube 
-          ref={youtubePlayerRef}
-          videoId={props.songs[props.currentSongIndex]?.src || null}
-          opts={youtubeOptions}
-          onStateChange={onYoutubeStateChange}/>
-        <PlayerDetails song={props.songs[props.currentSongIndex]} />
+        {
+          currentSong?.src ? (
+            <YouTube
+              ref={youtubePlayerRef}
+              videoId={currentSong.src}
+              opts={youtubeOptions}
+              onStateChange={onYoutubeStateChange}/>
+          ) : (
+            <></>
+          )
+        }
+        <PlayerDetails song={currentSong} />
 
         <PlayerControls
           isPlaying={isPlaying}
