@@ -42,6 +42,7 @@ body {
 .songs-list {
   padding: 5px;
   border-radius: 1.25rem;
+  margin-bottom: 2rem;
   box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.19),
     0 6px 6px -10px rgba(0, 0, 0, 0.23);
 }
@@ -49,6 +50,7 @@ body {
 /* body cover */
 .music-player--details {
   position: relative;
+  height: 520px;
 }
 
 .details-img img {
@@ -245,7 +247,8 @@ body {
   flex-direction: row;
   padding: 1px;
   height: 4em;
-  margin: 20px 0;
+  max-width: 470px;
+  margin: 40px 0;
 }
 
 .nextsong-details img {

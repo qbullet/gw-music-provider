@@ -4,6 +4,7 @@ import PlayerDetails from "./PlayerDetails";
 import PlayerControls from "./PlayerControls";
 import YouTube from "react-youtube";
 import SongsList from "./SongsList";
+import SocketIo from 'socket.io-client'
 
 const Player = (props) => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -19,18 +20,15 @@ const Player = (props) => {
       autoplay: 1,
     },
   }
+  
+  const onYoutubeStateChange = (state) => {
+    if (state.data === 0) {
+      const ENDPOINT = process.env.REACT_APP_GW_MUSIC_PROVIDER_SOCKET
+      const socket = SocketIo(ENDPOINT)
+  
+      socket.emit('end-music', props.songs[0].id)
 
-  const onYoutubeReady = () => {
-    if (youtubePlayerRef.current) {
-      const youtubePlayer = youtubePlayerRef.current.getInternalPlayer()
-
-      if (isPlaying) {
-        youtubePlayer.playVideo()
-      }
-
-      if (!isPlaying) {
-        youtubePlayer.pauseVideo()
-      }
+      SkipSong(true)
     }
   }
 
@@ -49,18 +47,17 @@ const Player = (props) => {
   });
 
   useEffect(() => {
-    const temp = props.songs.filter((song, index) => index !== props.currentSongIndex)
+    const currentIndex = props.songs.findIndex((song) => song.id === )
+    const temp = props.songs.filter((song, index) => index !== 0)
     setQueue(temp)
-  }, [props.currentSongIndex, props.songs]);
+  }, [props.songs]);
 
   const SkipSong = (forwards = true) => {
     if (forwards) {
       props.setCurrentSongIndex(() => {
         let temp = props.currentSongIndex;
-        temp++;
-
-        if (temp > props.songs.length - 1) {
-          temp = 0;
+        if (temp < props.songs.length - 1) {
+          temp++;
         }
 
         return temp;
@@ -68,10 +65,8 @@ const Player = (props) => {
     } else {
       props.setCurrentSongIndex(() => {
         let temp = props.currentSongIndex;
-        temp--;
-
-        if (temp < 0) {
-          temp = props.songs.length - 1;
+        if (temp > 0) {
+          temp--;
         }
 
         return temp;
@@ -81,6 +76,21 @@ const Player = (props) => {
 
   return (
     <>
+      <div className="music-player">
+        <YouTube 
+          ref={youtubePlayerRef}
+          videoId={props.songs[props.currentSongIndex]?.src || null}
+          opts={youtubeOptions}
+          onStateChange={onYoutubeStateChange}/>
+        <PlayerDetails song={props.songs[props.currentSongIndex]} />
+
+        <PlayerControls
+          isPlaying={isPlaying}
+          setIsPlaying={setIsPlaying}
+          SkipSong={SkipSong}
+        />
+      </div>
+
       <div className="text-anim">
         <strong>Upcoming Song:</strong>
       </div>
@@ -90,27 +100,12 @@ const Player = (props) => {
           ? (
             showQueue
             ? (queue.map((song, index) => <SongsList song={song} key={`song-${index}`}/>))
-            : (<SongsList song={props.songs[props.nextSongIndex]}/>)
+            : (<SongsList song={queue[0]}/>)
           )
           :  (
             (<b>No more queue, Add some!!</b>)
           )
         }
-      </div>
-      
-      <div className="music-player">
-        <YouTube 
-          ref={youtubePlayerRef}
-          videoId={props.songs[props.currentSongIndex].src}
-          opts={youtubeOptions}
-          onReady={onYoutubeReady} />
-        <PlayerDetails song={props.songs[props.currentSongIndex]} />
-
-        <PlayerControls
-          isPlaying={isPlaying}
-          setIsPlaying={setIsPlaying}
-          SkipSong={SkipSong}
-        />
       </div>
     </>
   );
